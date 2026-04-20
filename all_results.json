@@ -9,5 +9,5 @@
   "train_runtime": 976.0,
   "train_samples_per_second": 5.531,
   "train_steps_per_second": 0.173,
-  "note": "新服务器 prompt=OCR 实验，双卡4090，LoRA rank=8, lr=5e-4, bf16, 3 epochs, cosine scheduler"
+  "note": "prompt=OCR ，双卡4090，LoRA rank=8, lr=5e-4, bf16, 3 epochs, cosine scheduler"
 }
