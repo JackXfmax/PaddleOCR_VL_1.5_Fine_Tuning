@@ -1,0 +1,39 @@
+### 模型
+model_name_or_path: /home/ubuntu2204/xf/PaddleOCR-VL-1.5/
+trust_remote_code: true
+
+### LoRA
+lora: true
+lora_rank: 8
+lora_alpha: 16
+lora_dropout: 0.05
+lora_target_modules:
+  - q_proj
+  - v_proj
+  - k_proj
+  - o_proj
+
+### 数据
+dataset: /home/ubuntu2204/xf/natural_scene/train_joint_full.jsonl
+image_root: /home/ubuntu2204/xf/natural_scene/
+template: /home/ubuntu2204/xf/paddleocr_vl_v15_template.py
+
+### 训练超参
+output_dir: /home/ubuntu2204/xf/output/
+num_train_epochs: 3
+per_device_train_batch_size: 4
+gradient_accumulation_steps: 4
+learning_rate: 5.0e-4
+lr_scheduler_type: cosine
+warmup_ratio: 0.05
+bf16: true
+dataloader_num_workers: 4
+
+### 注意力实现
+_attn_implementation: flashmask
+
+### 保存
+save_strategy: epoch
+save_total_limit: 3
+logging_steps: 5
+report_to: none

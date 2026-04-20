@@ -1,0 +1,10 @@
+{
+  "epoch": 3.0,
+  "global_step": 169,
+  "total_flos": 0,
+  "train_loss": 0.056,
+  "train_runtime": 976.0,
+  "train_samples_per_second": 5.531,
+  "train_steps_per_second": 0.173,
+  "note": " prompt=OCR 实验，1800条多语言训练集，双卡4090，有效batch_size=32"
+}
