@@ -1,6 +1,5 @@
-# PaddleOCR_VL_1.5_Fine_Tuning
-This project was established for the Paddle Global Model Derivative Competition.
 # PaddleOCR-VL 藏文/多语言 LoRA 微调全流程文档
+# This project was established for the Paddle Global Model Derivative Competition.
 
 
 ---
