@@ -6,6 +6,6 @@
     "exact_match_rate": 0.52,
     "exact_match_count": 104
   },
-  "note": "prompt=OCR 实验，多语言测试集 test_all.jsonl（200条），1800条训练 + 数据增强，3 epochs，双卡 4090",
-  "details": "详见服务器 /home/ubuntu2204/xf/eval_results.json（含每条 pred/gt/sim）"
+  "note": "prompt=OCR ，多语言测试集 test_all.jsonl（200条），1800条训练 + 数据增强，3 epochs，双卡 4090",
+  "details": " /home/ubuntu2204/xf/eval_results.json（含每条 pred/gt/sim）"
 }
