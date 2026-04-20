@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PaddleOCR-VL 全量评测脚本
+PaddleOCR-VL 评测脚本
 计算 NED (Normalized Edit Distance) 和 Exact Match Rate
 """
 
