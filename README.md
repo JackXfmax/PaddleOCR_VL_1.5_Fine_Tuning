@@ -10,7 +10,7 @@
 |------|------|
 | 系统 | Ubuntu 22.04，Python 3.10.12 |
 | 硬件 | 2× RTX 4090
-| Conda 环境：paddle
+| Conda 环境 | paddle
 | 基座模型 | PaddleOCR-VL-1.5
 
 ---
