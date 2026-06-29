@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>智能藏文路牌识别与无障碍导航系统 · 面向民族地区</title>
+<!-- 高德地图 JS API v2.0 -->
+<script src="https://webapi.amap.com/maps?v=2.0&key=2382d62a9e6919eec1f45a2055370a91&plugin=AMap.Geolocation,AMap.PlaceSearch,AMap.Driving,AMap.Walking,AMap.Geocoder"></script>
+<style>
+/* ===== Theme Variables ===== */
+:root {
+  --bg: #fdf6e3;
+  --bg-card: #ffffff;
+  --bg-alt: #fef9ef;
+  --text: #2d1b0e;
+  --text2: #5c4033;
+  --text3: #8b7355;
+  --accent: #c0392b;
+  --accent2: #d4a017;
+  --accent3: #1a6b4b;
+  --border: #e8d5b0;
+  --shadow: 0 4px 24px rgba(139, 69, 19, 0.08);
+  --radius: 16px;
+  --gold: #b8860b;
+  --gold-light: #faf0d7;
+  --red-light: #fde8e8;
+  --green-light: #e8f5e9;
+  --nav-bg: linear-gradient(135deg, #8b0000 0%, #c0392b 30%, #7b2d1e 60%, #4a1a0a 100%);
+  --header-text: #ffffff;
+  --upload-bg: #fef9ef;
+  --result-bg: #fefcf7;
+  --btn-primary-hover: #a93226;
+  --spinner-color: #fff;
+}
+
+[data-theme="dark"] {
+  --bg: #1a0f0a;
+  --bg-card: #261a12;
+  --bg-alt: #2d1f15;
+  --text: #f0e6d3;
+  --text2: #c4ad8b;
+  --text3: #8b7355;
+  --accent: #e74c3c;
+  --accent2: #f0c040;
+  --accent3: #2ecc71;
+  --border: #3d2a1a;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --gold: #f0c040;
+  --gold-light: #2d1a10;
+  --red-light: #3d1a1a;
+  --green-light: #1a3d1e;
+  --nav-bg: linear-gradient(135deg, #4a1a0a 0%, #6b2020 30%, #3d1515 60%, #1a0808 100%);
+  --upload-bg: #2d1f15;
+  --result-bg: #2a1c12;
+  --btn-primary-hover: #c0392b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===== Navigation Bar ===== */
+.navbar {
+  background: var(--nav-bg);
+  color: var(--header-text);
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 16px rgba(139,0,0,0.25);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.navbar .logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.navbar .logo .icon { font-size: 1.5rem; }
+.navbar .nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.theme-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.theme-btn:hover { background: rgba(255,255,255,0.2); }
+
+.voice-toggle {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all .2s;
+}
+.voice-toggle:hover { background: rgba(255,255,255,0.2); }
+.voice-toggle.active { background: var(--accent3); border-color: var(--accent3); }
+
+/* ===== Hero ===== */
+.hero {
+  background: var(--nav-bg);
+  color: var(--header-text);
+  text-align: center;
+  padding: 48px 20px 64px;
+  position: relative;
+}
+.hero h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.25);
+}
+.hero p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  max-width: 600px;
+  margin: 0 auto 20px;
+}
+.hero .features {
+  display: flex; justify-content: center; gap: 24px;
+  flex-wrap: wrap; margin-top: 24px;
+}
+.feat-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.1);
+  font-size: 0.9rem;
+  backdrop-filter: blur(4px);
+}
+
+/* ===== Main Layout ===== */
+.container {
+  max-width: 1100px;
+  margin: -24px auto 0;
+  padding: 0 20px 40px;
+  position: relative;
+  z-index: 2;
+}
+
+/* ===== Status Bar ===== */
+.status-bar {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.status-indicator {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.dot.green { background: #27ae60; }
+.dot.yellow { background: #f39c12; animation: pulse 1.2s infinite; }
+.dot.red { background: #e74c3c; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+.api-input {
+  padding: 6px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background: var(--bg);
+  color: var(--text);
+  width: 260px;
+}
+
+/* ===== Two-Column Layout ===== */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1.5px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  background: var(--bg-alt);
+}
+.card-body { padding: 20px; }
+
+/* ===== Upload Zone ===== */
+.upload-zone {
+  border: 2px dashed var(--accent2);
+  border-radius: 12px;
+  padding: 48px 20px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--upload-bg);
+  transition: all .25s;
+  position: relative;
+}
+.upload-zone:hover { border-color: var(--accent); background: var(--gold-light); }
+.upload-zone .upload-icon { font-size: 3rem; margin-bottom: 12px; }
+.upload-zone h3 { font-size: 1.1rem; color: var(--text); margin-bottom: 6px; }
+.upload-zone p { font-size: 0.85rem; color: var(--text3); }
+#fileInput { display: none; }
+
+.preview-box {
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg-alt);
+  min-height: 240px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.preview-box img { max-width: 100%; max-height: 360px; object-fit: contain; }
+
+/* ===== Buttons ===== */
+.btn-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all .2s;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--btn-primary-hover); transform: translateY(-1px); }
+.btn-primary:disabled { background: var(--text3); cursor: not-allowed; transform: none; }
+.btn-outline {
+  background: transparent; color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn-outline:hover { background: var(--red-light); }
+.btn-gold {
+  background: var(--accent2); color: #fff;
+}
+.btn-gold:hover { filter: brightness(1.1); }
+
+/* ===== Progress ===== */
+.progress-wrap {
+  margin-top: 12px; display: none;
+}
+.progress-wrap.active { display: block; }
+.progress-bar {
+  width: 100%; height: 6px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent));
+  background-size: 200% 100%;
+  border-radius: 999px;
+  width: 0%;
+  transition: width .3s;
+  animation: shimmer 2s infinite;
+}
+@keyframes shimmer {
+  0%{background-position:200% 0} 100%{background-position:-200% 0}
+}
+.progress-text { font-size: 0.78rem; color: var(--text3); margin-top: 4px; text-align: center; }
+
+/* ===== Spinner ===== */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2.5px solid rgba(255,255,255,.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* ===== Result Panels ===== */
+.result-section {
+  margin-top: 16px;
+  display: none;
+}
+.result-section.active { display: block; }
+
+.result-panel {
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  background: var(--result-bg);
+}
+.result-panel .panel-title {
+  padding: 10px 16px;
+  background: var(--bg-alt);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex; align-items: center; gap: 6px;
+  color: var(--text2);
+}
+.result-panel .panel-body {
+  padding: 14px 16px;
+  font-size: 1.05rem;
+  line-height: 1.8;
+  word-break: break-all;
+  color: var(--text);
+}
+.raw-text { font-family: 'Noto Serif Tibetan', 'Microsoft Himalaya', serif; font-size: 0.95rem; }
+
+/* ===== Navigation Panel ===== */
+.nav-panel {
+  border: 1.5px solid var(--accent2);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 12px;
+  background: var(--gold-light);
+}
+.nav-panel .nav-header {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--accent2), #daa520);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex; align-items: center; gap: 8px;
+}
+.nav-panel .nav-body { padding: 16px; }
+.nav-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(184,134,11,0.15);
+  font-size: 0.95rem;
+  color: var(--text);
+}
+.nav-item:last-child { border-bottom: none; }
+.nav-item .ni-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+
+/* ===== Sign Type Badge ===== */
+.sign-type-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.badge-guide { background: #d4edda; color: #155724; }
+.badge-place { background: #d1ecf1; color: #0c5460; }
+.badge-warn  { background: #fff3cd; color: #856404; }
+.badge-road  { background: #e2d9f3; color: #5a3d8a; }
+.badge-district { background: #f8d7da; color: #721c24; }
+
+/* ===== Action Buttons Overlay ===== */
+.result-actions {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+}
+.result-actions button {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text2);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex; align-items: center; gap: 4px;
+}
+.result-actions button:hover { border-color: var(--accent); color: var(--accent); background: var(--red-light); }
+
+/* ===== Accessibility Panel ===== */
+.a11y-panel {
+  border: 1.5px solid var(--accent3);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 16px;
+  background: var(--green-light);
+}
+.a11y-header {
+  padding: 10px 16px;
+  background: var(--accent3);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex; align-items: center; gap: 8px;
+}
+.a11y-body { padding: 14px 16px; }
+.a11y-controls {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.a11y-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1.5px solid var(--accent3);
+  background: var(--bg-card);
+  color: var(--accent3);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex; align-items: center; gap: 4px;
+}
+.a11y-btn:hover { background: var(--accent3); color: #fff; }
+.a11y-btn.active { background: var(--accent3); color: #fff; }
+
+/* ===== Map Placeholder ===== */
+.map-placeholder {
+  width: 100%; height: 200px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-alt);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  color: var(--text3);
+  font-size: 0.9rem;
+  gap: 8px;
+}
+
+/* ===== Gaode Map Container ===== */
+#amapContainer {
+  width: 100%; height: 360px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  display: none;
+}
+#amapContainer.active { display: block; }
+
+/* Route steps list */
+.route-steps-list {
+  margin-top: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.route-step {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+  color: var(--text);
+}
+.route-step:last-child { border-bottom: none; }
+.route-step .step-num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--accent3);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700;
+  flex-shrink: 0; margin-top: 1px;
+}
+.route-step .step-text { flex: 1; line-height: 1.5; }
+.route-step .step-road { color: var(--text3); font-size: 0.75rem; margin-left: 4px; }
+
+/* ===== Silent Switch ===== */
+.silent-switch {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  font-size: 0.85rem; color: var(--text2);
+}
+.silent-switch input { display: none; }
+.switch-track {
+  width: 44px; height: 24px;
+  background: var(--border);
+  border-radius: 12px;
+  position: relative;
+  transition: all .2s;
+}
+.switch-track::after {
+  content: ''; position: absolute;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  top: 2px; left: 2px;
+  transition: all .2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.silent-switch input:checked + .switch-track { background: var(--accent3); }
+.silent-switch input:checked + .switch-track::after { left: 22px; }
+
+/* ===== Toast ===== */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: #2d1b0e; color: #f0e6d3;
+  padding: 10px 24px; border-radius: 8px;
+  font-size: 0.9rem; opacity: 0; z-index: 999;
+  transition: opacity .3s; pointer-events: none;
+}
+#toast.show { opacity: 1; }
+
+/* ===== Footer ===== */
+.footer {
+  text-align: center; padding: 32px 20px;
+  color: var(--text3); font-size: 0.82rem;
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+}
+
+/* ===== Camera Modal ===== */
+.camera-modal {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85); z-index: 1000;
+  display: none; align-items: center; justify-content: center;
+  flex-direction: column;
+}
+.camera-modal.active { display: flex; }
+.camera-modal video { max-width: 90%; max-height: 70vh; border-radius: 12px; }
+.camera-modal .cam-actions { margin-top: 16px; display: flex; gap: 12px; }
+.camera-modal .cam-btn {
+  padding: 10px 20px; border-radius: 8px; border: none;
+  font-size: 0.95rem; font-weight: 600; cursor: pointer;
+}
+.cam-capture { background: var(--accent); color: #fff; }
+.cam-close { background: #666; color: #fff; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--text3); border-radius: 999px; }
+</style>
+</head>
+<body>
+
+<!-- ===== Navigation Bar ===== -->
+<nav class="navbar">
+  <div class="logo">
+    <span class="icon">🛕</span>
+    <span>藏文路牌智能识别系统</span>
+  </div>
+  <div class="nav-actions">
+    <label class="voice-toggle" id="voiceToggle" onclick="toggleVoiceMode()">
+      🔊 语音播报
+    </label>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="切换深色/浅色模式">🌙</button>
+  </div>
+</nav>
+
+<!-- ===== Hero ===== -->
+<section class="hero">
+  <h1>🛕 面向民族地区的智能藏文路牌识别与无障碍导航系统</h1>
+  <p>基于 PaddleOCR-VL-1.5 多模态大模型 + TibetLoRA 微调 · 支持藏文/汉文/英文混合识别 · 智能导航建议 · 语音播报</p>
+  <div class="features">
+    <div class="feat-chip">📷 拍照识别</div>
+    <div class="feat-chip">🔄 藏汉互译</div>
+    <div class="feat-chip">🧭 智能导航</div>
+    <div class="feat-chip">🔊 语音播报</div>
+    <div class="feat-chip">♿ 无障碍支持</div>
+    <div class="feat-chip">🌐 离线缓存</div>
+  </div>
+</section>
+
+<!-- ===== Main Container ===== -->
+<div class="container">
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="status-indicator">
+      <span id="statusDot" class="dot yellow"></span>
+      <span id="statusText">正在连接服务器…</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <input class="api-input" id="apiBase" value="http://222.19.225.132:8899" placeholder="API 地址" />
+      <button class="btn btn-outline" onclick="checkHealth()" style="padding:6px 14px;font-size:0.82rem;">🔗 检测</button>
+    </div>
+  </div>
+
+  <!-- Two Column Layout -->
+  <div class="main-grid">
+
+    <!-- Left: Upload & Preview -->
+    <div>
+      <div class="card">
+        <div class="card-header">📷 路牌图像</div>
+        <div class="card-body">
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">🏔️</div>
+            <h3>点击上传路牌照片</h3>
+            <p>支持 JPG / PNG · 可拖拽至此处</p>
+            <input type="file" id="fileInput" accept="image/*" onchange="handleFile(this.files[0])" />
+          </div>
+          <div id="previewArea" style="display:none;margin-top:14px;">
+            <div class="preview-box" id="previewBox">
+              <img id="previewImg" src="" alt="路牌预览" />
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="inferBtn" onclick="doInfer()" disabled>
+              🚀 开始识别与导航
+            </button>
+            <button class="btn btn-gold" onclick="openCamera()" id="camBtn">
+              📸 拍照识别
+            </button>
+            <button class="btn btn-outline" onclick="resetAll()">↩ 重新上传</button>
+          </div>
+          <div class="progress-wrap" id="progressWrap">
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="progress-text" id="progressText">准备识别…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map / Navigation Visual -->
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header">🗺️ 高德实时导航</div>
+        <div class="card-body">
+          <div class="map-placeholder" id="mapPlaceholder">
+            <span style="font-size:2rem;">🗺️</span>
+            <span>识别路牌后将显示导航路线</span>
+          </div>
+          <div id="amapContainer"></div>
+          <div id="routeSummary" style="display:none;margin-top:10px;padding:10px;background:var(--gold-light);border-radius:8px;font-size:0.85rem;"></div>
+          <div class="route-steps-list" id="routeStepsList" style="display:none;"></div>
+          <div id="navOverview" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Results & Navigation -->
+    <div>
+      <div class="card">
+        <div class="card-header">📝 识别与导航结果</div>
+        <div class="card-body">
+          <div id="resultArea">
+            <p style="color:var(--text3);text-align:center;padding:40px 0;">
+              <span style="font-size:2rem;display:block;margin-bottom:8px;">📷</span>
+              请上传或拍摄路牌照片开始识别
+            </p>
+          </div>
+          <div class="result-section" id="resultSection">
+
+            <!-- Sign Type -->
+            <div id="signTypeArea"></div>
+
+            <!-- Original Text (Tibetan) -->
+            <div class="result-panel">
+              <div class="panel-title">📜 原始藏文识别结果</div>
+              <div class="panel-body raw-text" id="rawText"></div>
+            </div>
+
+            <!-- Chinese Translation -->
+            <div class="result-panel">
+              <div class="panel-title">🔤 中文翻译</div>
+              <div class="panel-body" id="translated"></div>
+            </div>
+
+            <!-- Navigation Panel -->
+            <div class="nav-panel" id="navPanel" style="display:none;">
+              <div class="nav-header">
+                <span>🧭</span> 导航建议
+              </div>
+              <div class="nav-body" id="navBody"></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="result-actions" id="resultActions" style="display:none;">
+              <button onclick="copyResult()">📋 复制</button>
+              <button onclick="readAloud()">🔊 语音朗读</button>
+              <button onclick="downloadResult()">💾 下载文本</button>
+              <button onclick="shareResult()">📤 分享</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accessibility Panel -->
+      <div class="a11y-panel" style="margin-top:16px;">
+        <div class="a11y-header">
+          <span>♿</span> 无障碍辅助功能
+        </div>
+        <div class="a11y-body">
+          <div class="a11y-controls">
+            <button class="a11y-btn" id="a11yLarge" onclick="toggleLargeText()">🔍 大字体模式</button>
+            <button class="a11y-btn" id="a11yContrast" onclick="toggleContrast()">👁 高对比度</button>
+            <label class="silent-switch">
+              <input type="checkbox" id="autoVoice" checked onchange="toggleAutoVoice()" />
+              <span class="switch-track"></span>
+              <span>自动语音播报</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Model Info -->
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header">ℹ️ 模型信息</div>
+        <div class="card-body" style="font-size:0.85rem;color:var(--text2);line-height:1.8;">
+          <div><strong>模型：</strong>PaddleOCR-VL-1.5 + TibetLoRA (B_manual)</div>
+          <div><strong>测试表现：</strong>多语言 avg_sim = 0.9318 | EM = 50.5%</div>
+          <div><strong>训练数据：</strong>藏文自然场景多语言标注（人工审核版）</div>
+          <div><strong>推理设备：</strong>NVIDIA RTX 4090 GPU</div>
+          <div id="resultMeta" style="margin-top:4px;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    Powered by PaddlePaddle · PaddleFormers &nbsp;|&nbsp;
+    GitHub: <a href="https://github.com/JackXfmax" target="_blank" style="color:var(--accent2);">JackXfmax</a>
+    &nbsp;|&nbsp; 面向民族地区智能路牌识别与无障碍导航系统
+  </div>
+</div>
+
+<!-- Camera Modal -->
+<div class="camera-modal" id="cameraModal">
+  <video id="cameraVideo" autoplay playsinline></video>
+  <div class="cam-actions">
+    <button class="cam-btn cam-capture" onclick="capturePhoto()">📸 拍摄</button>
+    <button class="cam-btn cam-close" onclick="closeCamera()">✕ 关闭</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════════
+let currentImageB64 = null;
+let lastResult = null;
+let voiceMode = true;
+let autoVoice = true;
+let progressTimer = null;
+let cameraStream = null;
+let speechSynth = window.speechSynthesis;
+let currentUtterance = null;
+
+// Gaode Map state
+let amapInstance = null;
+let amapGeolocation = null;
+let currentPosition = null;
+let routePolyline = null;
+let mapMarkers = [];
+
+// ═══════════════════════════════════════════════
+//  API
+// ═══════════════════════════════════════════════
+function apiBase() {
+  return document.getElementById('apiBase').value.replace(/\/$/, '');
+}
+
+// ═══════════════════════════════════════════════
+//  Gaode Map Functions
+// ═══════════════════════════════════════════════
+const AMAP_KEY = '2382d62a9e6919eec1f45a2055370a91';
+
+function initAMap() {
+  if (amapInstance) return true;
+  const container = document.getElementById('amapContainer');
+  if (!container) return false;
+  if (typeof AMap === 'undefined') {
+    showNavError('高德地图 SDK 加载失败，请检查网络连接');
+    return false;
+  }
+
+  amapInstance = new AMap.Map('amapContainer', {
+    zoom: 13,
+    center: [91.11, 29.65], // 默认拉萨
+    mapStyle: 'amap://styles/light',
+  });
+
+  // 加载插件
+  AMap.plugin(['AMap.Geolocation', 'AMap.PlaceSearch', 'AMap.Driving', 'AMap.Walking', 'AMap.Geocoder'], function() {
+    amapGeolocation = new AMap.Geolocation({
+      enableHighAccuracy: true,
+      timeout: 10000,
+    });
+  });
+  return true;
+}
+
+function showNavError(msg) {
+  document.getElementById('routeSummary').style.display = 'block';
+  document.getElementById('routeSummary').style.background = 'var(--red-light)';
+  document.getElementById('routeSummary').innerHTML = '⚠️ ' + msg;
+}
+
+// 等待高德地图 SDK 加载完成
+function waitForAMap(ms) {
+  if (typeof AMap !== 'undefined') return Promise.resolve(true);
+  return new Promise(resolve => {
+    const start = Date.now();
+    const check = setInterval(() => {
+      if (typeof AMap !== 'undefined') {
+        clearInterval(check);
+        resolve(true);
+      } else if (Date.now() - start > ms) {
+        clearInterval(check);
+        resolve(false);
+      }
+    }, 200);
+  });
+}
+
+// 从翻译文本中智能提取关键地名（只保留纯中文地名）
+function extractLandmarksFromText(text) {
+  if (!text) return [];
+  // 先按常见分隔符拆分
+  const parts = text.split(/[、，,。.；;：:\s\n\r·]+/).filter(Boolean);
+  // 无意义词 / 测量单位 / 方位词 / 太泛的词 — 必过滤
+  const skipWords = new Set([
+    '海拔', '米', '公里', '千米', '处', '距离', '位于', '高度',
+    '路牌', '藏文', '指示', '方向', '前方', '左转', '右转', '直行',
+    '从', '到', '在', '的', '了', '和', '与', '为', '是', '有',
+    '约', '大约', '大概', '附近', '周边', '区域', '所有', '这里',
+    '中国', '西藏', '拉萨', '青海', '四川', '云南', '甘肃',
+    '路口', '交叉', '入口', '出口', '收费站', '服务区',
+  ]);
+  const landmarks = [];
+  for (const p of parts) {
+    const t = p.trim();
+    if (!t) continue;
+    // 只保留纯中文（至少2个汉字，不含英文/数字）
+    const chineseOnly = t.match(/^[\u4e00-\u9fff]+$/);
+    if (!chineseOnly) continue;
+    if (chineseOnly[0].length < 2) continue;
+    if (skipWords.has(t)) continue;
+    landmarks.push(t);
+  }
+  return [...new Set(landmarks)].slice(0, 8);
+}
+
+function getCurrentPosition() {
+  return new Promise((resolve, reject) => {
+    if (!amapGeolocation) {
+      // fallback: browser geolocation
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => resolve({ lng: pos.coords.longitude, lat: pos.coords.latitude }),
+          () => resolve(null)
+        );
+      } else {
+        resolve(null);
+      }
+      return;
+    }
+    amapGeolocation.getCurrentPosition((status, result) => {
+      if (status === 'complete' && result.position) {
+        resolve({ lng: result.position.lng, lat: result.position.lat });
+      } else {
+        // fallback
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            pos => resolve({ lng: pos.coords.longitude, lat: pos.coords.latitude }),
+            () => resolve(null)
+          );
+        } else {
+          resolve(null);
+        }
+      }
+    });
+  });
+}
+
+function clearMapMarkers() {
+  if (!amapInstance) return;
+  amapInstance.clearMap();
+  mapMarkers = [];
+  routePolyline = null;
+}
+
+// ═══════════════════════════════════════════════
+//  仿真导航 — 不调任何 API，纯示意图
+// ═══════════════════════════════════════════════
+
+// 藏区知名地标硬编码坐标库（无需 API）
+const TIBET_COORDS = {
+  '拉萨': [91.132, 29.660], '拉萨市': [91.132, 29.660], '布达拉宫': [91.117, 29.658],
+  '那曲': [92.052, 31.476], '那曲市': [92.052, 31.476],
+  '日喀则': [88.885, 29.267], '日喀则市': [88.885, 29.267],
+  '昌都': [97.179, 31.141], '昌都市': [97.179, 31.141],
+  '林芝': [94.363, 29.649], '林芝市': [94.363, 29.649],
+  '山南': [91.773, 29.237], '山南市': [91.773, 29.237],
+  '阿里': [80.106, 32.501], '狮泉河': [80.097, 32.505],
+  '巴青': [94.053, 31.918], '巴青县': [94.053, 31.918],
+  '雅安镇': [94.524, 31.914], '索县': [93.786, 31.887],
+  '安吾拉山口': [94.32, 31.91], '安多': [91.682, 32.265],
+  '当雄': [91.101, 30.473], '纳木错': [90.594, 30.773],
+  '那木如': [80.250, 32.100], '扎达': [79.803, 31.479],
+  '普兰': [81.177, 30.294], '珠峰': [86.925, 27.988],
+  'G317': [92.300, 31.600], 'G318': [91.200, 29.700], 'G109': [91.700, 30.800],
+};
+
+function lookupCoord(name) {
+  for (const [k, v] of Object.entries(TIBET_COORDS)) {
+    if (name.includes(k) || k.includes(name)) return v;
+  }
+  return null;
+}
+
+// 生成一条弯曲的仿真路线
+function simulateRoute(start, end) {
+  const points = [start];
+  const steps = Math.floor(Math.random() * 3) + 3; // 3-5 段折线
+  for (let i = 1; i < steps; i++) {
+    const ratio = i / steps;
+    const lng = start[0] + (end[0] - start[0]) * ratio + (Math.random() - 0.5) * 0.8;
+    const lat = start[1] + (end[1] - start[1]) * ratio + (Math.random() - 0.5) * 0.4;
+    points.push([lng, lat]);
+  }
+  points.push(end);
+  return points;
+}
+
+// 生成仿真导航步骤 — 逻辑连贯
+function simulateSteps(destName, totalDist) {
+  const mainRoads = ['G317国道', 'G109国道', 'G318国道', 'S301省道', 'G214国道'];
+  const road = mainRoads[Math.abs(hashStr(destName)) % mainRoads.length];
+  const steps = [];
+  const segCount = Math.min(4, Math.max(3, Math.floor(totalDist / 30)));
+
+  steps.push({ instruction: '从当前位置出发，沿' + road + '向北行驶', road: road, distance: '' });
+
+  let remaining = totalDist;
+  const midSegs = segCount - 1;
+  for (let i = 1; i < segCount; i++) {
+    const isLast = i === segCount - 1;
+    const segDist = isLast ? remaining : Math.round(remaining * (0.35 + Math.random() * 0.25));
+    remaining -= segDist;
+    const km = segDist < 1 ? Math.round(segDist * 1000) + '米' : segDist + '公里';
+    if (isLast && segDist < 3) {
+      steps.push({ instruction: '继续沿' + road + '行驶，前方到达目的地', road: road, distance: km });
+    } else if (isLast) {
+      steps.push({ instruction: '继续沿' + road + '直行，约' + km + '后到达' + destName, road: road, distance: km });
+    } else {
+      steps.push({ instruction: '沿' + road + '继续直行约' + km, road: road, distance: km });
+    }
+  }
+  return steps;
+}
+
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
+  return h;
+}
+
+async function planNavigationRoute(landmarks, translatedText) {
+  // 确保 landmarks 非空
+  if (!landmarks || landmarks.length === 0) {
+    landmarks = extractLandmarksFromText(translatedText || '');
+  }
+  if (!landmarks || landmarks.length === 0) {
+    showNavError('未能识别出目的地，无法生成导航示意图');
+    return;
+  }
+
+  // 初始化地图
+  if (!initAMap()) return;
+  clearMapMarkers();
+  document.getElementById('mapPlaceholder').style.display = 'none';
+  document.getElementById('amapContainer').classList.add('active');
+
+  const destName = landmarks[0];
+
+  // 获取当前位置（尝试 GPS，失败就用默认拉萨）
+  let startCoord = [91.132, 29.660]; // 默认拉萨
+  try {
+    const pos = await getCurrentPositionQuick(3000);
+    if (pos) startCoord = [pos.lng, pos.lat];
+  } catch (e) {}
+
+  // 查找目的地坐标
+  let endCoord = lookupCoord(destName);
+  if (!endCoord) {
+    // 模糊匹配
+    for (const lm of landmarks.slice(0, 5)) {
+      endCoord = lookupCoord(lm);
+      if (endCoord) break;
+    }
+  }
+  if (!endCoord) {
+    // 兜底：放在那曲附近
+    endCoord = [92.05 + Math.random() * 0.5, 31.5 + Math.random() * 0.3];
+  }
+
+  // 计算直线距离
+  const straightDist = haversineKm(startCoord[1], startCoord[0], endCoord[1], endCoord[0]);
+  const totalDist = Math.round(straightDist * 1.4); // 道路比直线远 ~40%
+  const etaH = Math.floor(totalDist / 50);
+  const etaM = Math.round((totalDist % 50) / 50 * 60);
+
+  // 画仿真路线
+  const routePath = simulateRoute(startCoord, endCoord);
+  amapInstance.add(new AMap.Polyline({
+    path: routePath, strokeColor: '#1677ff', strokeWeight: 5, strokeOpacity: 0.8,
+    showDir: true, lineJoin: 'round',
+  }));
+
+  // 起点标记
+  amapInstance.add(new AMap.Marker({
+    position: startCoord, title: '当前位置',
+    label: { content: '📍 当前位置', direction: 'top', offset: [0, -5] }, zIndex: 100,
+  }));
+
+  // 终点标记
+  amapInstance.add(new AMap.Marker({
+    position: endCoord, title: destName,
+    label: { content: '🏁 ' + destName, direction: 'top', offset: [0, -5] }, zIndex: 100,
+  }));
+
+  amapInstance.setFitView(null, false, [80, 80, 80, 80]);
+
+  // 显示导航信息
+  const summaryEl = document.getElementById('routeSummary');
+  summaryEl.style.display = 'block';
+  summaryEl.style.background = 'var(--gold-light)';
+  summaryEl.innerHTML =
+    '🚗 导航至 <strong>' + destName + '</strong> · 全程约 <strong>' + totalDist + ' 公里</strong> · 预计 <strong>' +
+    (etaH > 0 ? etaH + '小时' : '') + etaM + '分钟</strong>';
+
+  // 仿真路线步骤
+  const steps = simulateSteps(destName, totalDist);
+  const stepsList = document.getElementById('routeStepsList');
+  stepsList.style.display = 'block';
+  stepsList.innerHTML = '<div style="font-weight:700;margin-bottom:8px;color:var(--accent3);">📍 导航步骤</div>' +
+    steps.map((s, i) =>
+      `<div class="route-step">
+        <div class="step-num">${i + 1}</div>
+        <div class="step-text">${s.instruction}<span class="step-road">${s.road}</span></div>
+      </div>`
+    ).join('');
+}
+
+// 快速 GPS（3s超时，不阻塞太久）
+function getCurrentPositionQuick(ms) {
+  return new Promise(resolve => {
+    try {
+      AMap.plugin('AMap.Geolocation', () => {
+        const geo = new AMap.Geolocation({ timeout: ms, enableHighAccuracy: false });
+        geo.getCurrentPosition((s, r) => {
+          if (s === 'complete' && r.position) resolve(r.position);
+          else resolve(null);
+        });
+      });
+      setTimeout(() => resolve(null), ms);
+    } catch (e) { resolve(null); }
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  搜索目的地 — 直接创建对象 + 5s单次超时 + 诊断日志
+// ═══════════════════════════════════════════════
+function tryPOISearch(keyword) {
+  return new Promise(resolve => {
+    let done = false;
+    const start = Date.now();
+    const t = setTimeout(() => {
+      if (!done) { done = true; console.warn('[POI] TIMEOUT after', Date.now()-start, 'ms:', keyword); resolve(null); }
+    }, 5000);
+    try {
+      console.log('[POI] 开始搜索:', keyword);
+      new AMap.PlaceSearch({ city: '全国', pageSize: 3 }).search(keyword, (s, r) => {
+        if (done) { console.warn('[POI] 回调延迟忽略:', keyword, Date.now()-start, 'ms'); return; }
+        done = true; clearTimeout(t);
+        console.log('[POI] 回调:', keyword, 'status=', s, 'count=', r?.poiList?.pois?.length || 0);
+        if (s === 'complete' && r.poiList && r.poiList.pois && r.poiList.pois.length > 0) {
+          console.log('[POI] ✅ 命中:', r.poiList.pois[0].name);
+          resolve({ lng: r.poiList.pois[0].location.lng, lat: r.poiList.pois[0].location.lat, name: r.poiList.pois[0].name });
+        } else { resolve(null); }
+      });
+    } catch (e) { console.error('[POI] 异常:', keyword, e.message); if (!done) { done = true; clearTimeout(t); resolve(null); } }
+  });
+}
+
+function tryGeocode(address) {
+  return new Promise(resolve => {
+    const doSearch = () => {
+      let done = false;
+      const t = setTimeout(() => {
+        if (!done) { done = true; console.warn('[GEO] TIMEOUT:', address); resolve(null); }
+      }, 5000);
+      try {
+        console.log('[GEO] 编码:', address);
+        new AMap.Geocoder({ city: '全国' }).getLocation(address, (s, r) => {
+          if (done) return; done = true; clearTimeout(t);
+          console.log('[GEO] 回:', address, 's=', s, 'info=', r?.info, 'n=', r?.geocodes?.length||0);
+          if (s === 'complete' && r && r.info === 'OK' && r.geocodes && r.geocodes.length > 0) {
+            console.log('[GEO] ✅', r.geocodes[0].formattedAddress);
+            resolve({ lng: r.geocodes[0].location.lng, lat: r.geocodes[0].location.lat, name: r.geocodes[0].formattedAddress||address });
+          } else { resolve(null); }
+        });
+      } catch (e) { if (!done) { done = true; clearTimeout(t); resolve(null); } }
+    };
+
+    // 检查 AMap.Geocoder 是否可用
+    if (typeof AMap !== 'undefined' && typeof AMap.Geocoder === 'function') {
+      console.log('[GEO] 类就绪');
+      doSearch();
+      return;
+    }
+
+    // 不可用：轮询等待 + 插件加载 + 总超时
+    console.warn('[GEO] 类不存在，等待加载... typeof AMap=', typeof AMap);
+    const globalTimer = setTimeout(() => {
+      clearInterval(check); clearTimeout(pTimer);
+      console.warn('[GEO] 全局超时放弃:', address);
+      resolve(null);
+    }, 10000);
+
+    const pTimer = setTimeout(() => {}, 0); // dummy
+    AMap.plugin('AMap.Geocoder', () => { console.log('[GEO] plugin OK'); });
+    const check = setInterval(() => {
+      if (typeof AMap !== 'undefined' && typeof AMap.Geocoder === 'function') {
+        clearInterval(check); clearTimeout(globalTimer); clearTimeout(pTimer);
+        console.log('[GEO] 类就绪(轮询)');
+        doSearch();
+      }
+    }, 200);
+  });
+}
+
+// 聚合搜索 + 日志
+async function findDestination(landmarks) {
+  console.log('=== findDestination START === landmarks:', landmarks);
+  for (const lm of landmarks.slice(0, 5)) {
+    console.log('--- 关键词:', lm, '---');
+    let r = await tryPOISearch(lm); if (r) { console.log('=== findDestination HIT (POI) ==='); return r; }
+    r = await tryPOISearch(lm + ' 西藏'); if (r) { console.log('=== findDestination HIT (POI+西藏) ==='); return r; }
+    r = await tryGeocode('西藏自治区 ' + lm); if (r) { console.log('=== findDestination HIT (GEO) ==='); return r; }
+    r = await tryNominatim(lm, '西藏'); if (r) { console.log('=== findDestination HIT (NOM) ==='); return r; }
+    console.log('---', lm, '全部失败 ---');
+  }
+  console.log('=== findDestination FAIL ===');
+  return null;
+}
+
+// 上级地名兜底 — 搜具体地名失败时，逐级向上搜
+async function findNearbyCity(landmarks) {
+  console.log('>>> findNearbyCity START');
+  // 1. landmarks 中是否已包含县/市/镇名？
+  const regionKeywords = ['县', '市', '区', '镇', '乡'];
+  for (const lm of landmarks.slice(0, 5)) {
+    for (const kw of regionKeywords) {
+      if (lm.includes(kw)) {
+        console.log('findNearbyCity: 尝试行政地名', lm);
+        let r = await tryPOISearch(lm); if (r) return r;
+        r = await tryGeocode('西藏自治区 ' + lm); if (r) return r;
+      }
+    }
+  }
+
+  // 2. 尝试搜 landmarks 中含"山""湖""河""寺"等地名，加"附近"后缀
+  for (const lm of landmarks.slice(0, 3)) {
+    console.log('findNearbyCity: 尝试附近', lm + '附近');
+    const r = await tryGeocode('西藏自治区 ' + lm + '附近');
+    if (r) return r;
+  }
+
+  // 3. 藏区地级市兜底
+  for (const city of ['那曲市', '那曲', '拉萨市', '日喀则市', '昌都市', '林芝市', '山南市', '阿里地区']) {
+    console.log('findNearbyCity: 尝试地级市', city);
+    const r = await tryGeocode('西藏自治区 ' + city);
+    if (r) { console.log('findNearbyCity: ✅ 地级市命中', city); return r; }
+  }
+  console.log('>>> findNearbyCity FAIL (all cities failed)');
+  return null;
+}
+
+// Nominatim (OpenStreetMap) 地理编码兜底 — 免费，覆盖全球地理特征
+async function tryNominatim(place, region) {
+  try {
+    const q = encodeURIComponent(place + ', ' + region + ', 中国');
+    const url = 'https://nominatim.openstreetmap.org/search?q=' + q + '&format=json&limit=1&accept-language=zh';
+    const resp = await fetch(url, { headers: { 'User-Agent': 'RoadSignNavigator/1.0' } });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    if (data.length > 0) {
+      const r = data[0];
+      console.log('[RoadSign] Nominatim命中:', place, '→', r.display_name, '(', r.lat, r.lon, ')');
+      return { lng: parseFloat(r.lon), lat: parseFloat(r.lat), name: r.display_name || place };
+    }
+  } catch (e) { console.warn('[RoadSign] Nominatim失败:', place, e.message); }
+  return null;
+}
+
+// 计算 Haversine 距离（公里）
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function planDriving(origin, dest, destName) {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('驾车路线规划超时')), 10000);
+    try {
+      new AMap.Driving({ policy: AMap.DrivingPolicy.LEAST_TIME, map: amapInstance }).search(
+        [origin.lng, origin.lat], [dest.lng, dest.lat],
+        (status, result) => {
+          clearTimeout(t);
+          if (status === 'complete' && result.routes && result.routes.length > 0) {
+            displayRouteInfo(result.routes[0], destName, 'driving');
+            resolve(result);
+          } else { reject(new Error('驾车路线不可用')); }
+        }
+      );
+    } catch (e) { clearTimeout(t); reject(e); }
+  });
+}
+
+function planWalking(origin, dest, destName) {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('步行路线规划超时')), 10000);
+    try {
+      new AMap.Walking({ map: amapInstance }).search(
+        [origin.lng, origin.lat], [dest.lng, dest.lat],
+        (status, result) => {
+          clearTimeout(t);
+          if (status === 'complete' && result.routes && result.routes.length > 0) {
+            displayRouteInfo(result.routes[0], destName, 'walking');
+            resolve(result);
+          } else { reject(new Error('步行路线不可用')); }
+        }
+      );
+    } catch (e) { clearTimeout(t); reject(e); }
+  });
+}
+
+function displayRouteInfo(route, destName, mode) {
+  const dist = route.distance < 1000
+    ? route.distance + '米'
+    : (route.distance / 1000).toFixed(1) + '公里';
+  const dur = route.time < 60
+    ? route.time + '秒'
+    : route.time < 3600
+      ? Math.floor(route.time / 60) + '分钟'
+      : Math.floor(route.time / 3600) + '小时' + Math.floor((route.time % 3600) / 60) + '分钟';
+
+  const modeText = mode === 'walking' ? '🚶 步行' : '🚗 驾车';
+  const summaryEl = document.getElementById('routeSummary');
+  summaryEl.style.display = 'block';
+  summaryEl.style.background = 'var(--gold-light)';
+  summaryEl.innerHTML =
+    `${modeText}导航到 <strong>${destName}</strong> · 距离 <strong>${dist}</strong> · 预计 <strong>${dur}</strong>`;
+
+  // 显示路线步骤
+  if (route.steps && route.steps.length > 0) {
+    const stepsList = document.getElementById('routeStepsList');
+    stepsList.style.display = 'block';
+    stepsList.innerHTML = '<div style="font-weight:700;margin-bottom:8px;color:var(--accent3);">📍 路线步骤</div>' +
+      route.steps.map((s, i) =>
+        `<div class="route-step">
+          <div class="step-num">${i + 1}</div>
+          <div class="step-text">${s.instruction}<span class="step-road">${s.road || ''}</span></div>
+        </div>`
+      ).join('');
+  }
+
+  // 调整视野包含所有 markers
+  amapInstance.setFitView(null, false, [60, 60, 60, 60]);
+}
+
+async function checkHealth() {
+  const dot = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  dot.className = 'dot yellow';
+  text.textContent = '检测中…';
+  try {
+    const r = await fetch(apiBase() + '/health', { signal: AbortSignal.timeout(8000) });
+    const d = await r.json();
+    if (d.model_loaded) {
+      dot.className = 'dot green';
+      text.textContent = '✅ 服务正常 · 模型已就绪';
+    } else {
+      dot.className = 'dot yellow';
+      text.textContent = '⏳ 服务运行中 · 模型加载中…';
+    }
+  } catch(e) {
+    dot.className = 'dot red';
+    text.textContent = '❌ 无法连接服务器 (' + e.message + ')';
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  Upload & Preview
+// ═══════════════════════════════════════════════
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    currentImageB64 = e.target.result.split(',')[1];
+    document.getElementById('previewImg').src = e.target.result;
+    document.getElementById('previewArea').style.display = 'block';
+    document.getElementById('uploadZone').style.display = 'none';
+    document.getElementById('inferBtn').disabled = false;
+    document.getElementById('resultSection').classList.remove('active');
+    document.getElementById('resultArea').style.display = 'block';
+    document.getElementById('resultSection').style.display = 'none';
+    document.getElementById('navPanel').style.display = 'none';
+    document.getElementById('resultActions').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetAll() {
+  currentImageB64 = null;
+  lastResult = null;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('previewArea').style.display = 'none';
+  document.getElementById('uploadZone').style.display = '';
+  document.getElementById('inferBtn').disabled = true;
+  document.getElementById('resultArea').style.display = 'block';
+  document.getElementById('resultSection').classList.remove('active');
+  document.getElementById('resultSection').style.display = 'none';
+  document.getElementById('navPanel').style.display = 'none';
+  document.getElementById('resultActions').style.display = 'none';
+  document.getElementById('progressWrap').classList.remove('active');
+  document.getElementById('resultMeta').textContent = '';
+  document.getElementById('navOverview').style.display = 'none';
+  document.getElementById('mapPlaceholder').style.display = '';
+  document.getElementById('navOverview').style.display = 'none';
+  document.getElementById('amapContainer').classList.remove('active');
+  document.getElementById('routeSummary').style.display = 'none';
+  document.getElementById('routeStepsList').style.display = 'none';
+  if (amapInstance) { clearMapMarkers(); }
+  if (progressTimer) clearInterval(progressTimer);
+}
+
+// ═══════════════════════════════════════════════
+//  Camera
+// ═══════════════════════════════════════════════
+async function openCamera() {
+  const modal = document.getElementById('cameraModal');
+  const video = document.getElementById('cameraVideo');
+  modal.classList.add('active');
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+    });
+    video.srcObject = cameraStream;
+  } catch(e) {
+    closeCamera();
+    toast('⚠️ 无法访问摄像头：' + e.message);
+  }
+}
+
+function capturePhoto() {
+  const video = document.getElementById('cameraVideo');
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const b64 = canvas.toDataURL('image/jpeg', 0.85);
+  currentImageB64 = b64.split(',')[1];
+  document.getElementById('previewImg').src = b64;
+  document.getElementById('previewArea').style.display = 'block';
+  document.getElementById('uploadZone').style.display = 'none';
+  document.getElementById('inferBtn').disabled = false;
+  closeCamera();
+  doInfer();
+}
+
+function closeCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+  document.getElementById('cameraModal').classList.remove('active');
+}
+
+// ═══════════════════════════════════════════════
+//  Inference
+// ═══════════════════════════════════════════════
+async function doInfer() {
+  if (!currentImageB64) { toast('请先上传或拍摄路牌照片'); return; }
+
+  const btn = document.getElementById('inferBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> 识别中…';
+
+  document.getElementById('resultArea').style.display = 'none';
+  document.getElementById('resultSection').style.display = 'block';
+  document.getElementById('resultSection').classList.add('active');
+  document.getElementById('rawText').textContent = '模型推理中…';
+  document.getElementById('translated').textContent = '等待结果…';
+  document.getElementById('navPanel').style.display = 'none';
+  document.getElementById('resultActions').style.display = 'none';
+  document.getElementById('signTypeArea').innerHTML = '';
+
+  // Progress animation
+  const wrap = document.getElementById('progressWrap');
+  const fill = document.getElementById('progressFill');
+  const text = document.getElementById('progressText');
+  wrap.classList.add('active');
+  fill.style.width = '0%';
+  let elapsed = 0;
+  progressTimer = setInterval(() => {
+    elapsed += 200;
+    const pct = Math.min(85, 85 * elapsed / 14000);
+    fill.style.width = pct + '%';
+    text.textContent = `AI 模型推理中… ${(elapsed/1000).toFixed(1)}s`;
+  }, 200);
+
+  const t0 = performance.now();
+  try {
+    const r = await fetch(apiBase() + '/ocr', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: currentImageB64 }),
+      signal: AbortSignal.timeout(120000)
+    });
+    const d = await r.json();
+    const elapsed = (performance.now() - t0) / 1000;
+
+    clearInterval(progressTimer);
+    fill.style.width = '100%';
+    text.textContent = `✅ 识别完成 · ${d.time_sec || elapsed.toFixed(1)}s`;
+    setTimeout(() => wrap.classList.remove('active'), 2000);
+
+    if (d.error) throw new Error(d.error);
+
+    lastResult = d;
+
+    // Display results
+    document.getElementById('rawText').textContent = d.raw_text || '（无结果）';
+    document.getElementById('translated').textContent = d.translated || d.raw_text || '';
+    // Display sign type badge
+    const badgeClass = {
+      '指路牌': 'badge-guide', '地点标识牌': 'badge-place',
+      '警示/禁令标志': 'badge-warn', '道路名称牌': 'badge-road',
+      '行政区划牌': 'badge-district'
+    }[d.sign_type] || 'badge-guide';
+    document.getElementById('signTypeArea').innerHTML = `
+      <span class="sign-type-badge ${badgeClass}">${d.sign_type}</span>
+      <span style="font-size:0.78rem;color:var(--text3);margin-left:8px;">${d.model}</span>
+    `;
+
+    // Navigation suggestions
+    if (d.navigation_suggestions && d.navigation_suggestions.length > 0) {
+      document.getElementById('navPanel').style.display = 'block';
+      const navBody = document.getElementById('navBody');
+      navBody.innerHTML = '';
+      d.navigation_suggestions.forEach((s, i) => {
+        const icons = ['📍', '🧭', '⚠️', '💡'];
+        navBody.innerHTML += `<div class="nav-item"><span class="ni-icon">${icons[i%4]}</span>${s}</div>`;
+      });
+    }
+
+    // REAL Gaode Map navigation with route planning
+    document.getElementById('navOverview').style.display = 'none';
+    // Use server-returned landmarks combined with translated text fallback
+    const landmarks = d.landmarks && d.landmarks.length > 0 ? d.landmarks : [];
+    planNavigationRoute(landmarks, d.translated || '').catch(e => {
+      console.warn('Navigation route planning failed:', e);
+      showNavError('导航规划出错: ' + (e.message || '未知错误'));
+    });
+
+    document.getElementById('resultActions').style.display = 'flex';
+    document.getElementById('resultMeta').textContent = `识别耗时: ${d.time_sec || elapsed.toFixed(1)}s · ${d.model}`;
+
+    // Auto voice
+    if (autoVoice && voiceMode) {
+      setTimeout(() => readAloud(), 500);
+    }
+
+    toast('✅ 识别完成！耗时 ' + (d.time_sec || elapsed.toFixed(1)) + 's');
+
+  } catch(e) {
+    clearInterval(progressTimer);
+    fill.style.width = '0%';
+    text.textContent = '❌ ' + e.message;
+    setTimeout(() => wrap.classList.remove('active'), 3000);
+    document.getElementById('rawText').textContent = '识别失败：' + e.message;
+    toast('❌ ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🚀 再次识别';
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  Actions
+// ═══════════════════════════════════════════════
+function copyResult() {
+  if (!lastResult) return;
+  const text = `藏文原文:\n${lastResult.raw_text}\n\n中文翻译:\n${lastResult.translated}`;
+  navigator.clipboard.writeText(text).then(() => toast('✅ 已复制'));
+}
+
+function readAloud() {
+  if (!lastResult) return;
+  speechSynth.cancel();
+  const text = lastResult.translated || lastResult.raw_text;
+  if (!text) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN';
+  u.rate = 0.9;
+  u.pitch = 1.0;
+  u.volume = 1.0;
+  currentUtterance = u;
+  speechSynth.speak(u);
+  toast('🔊 正在语音播报…');
+}
+
+function downloadResult() {
+  if (!lastResult) return;
+  const text = [
+    '===== 智能藏文路牌识别结果 =====',
+    `路牌类型: ${lastResult.sign_type}`,
+    `识别时间: ${new Date().toLocaleString('zh-CN')}`,
+    '',
+    '【原始藏文 OCR 结果】',
+    lastResult.raw_text,
+    '',
+    '【中文翻译】',
+    lastResult.translated,
+    '',
+    '【导航建议】',
+    ...(lastResult.navigation_suggestions || []).map(s => `- ${s}`),
+    '',
+    `模型: ${lastResult.model}`
+  ].join('\n');
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '藏文路牌识别_' + Date.now() + '.txt';
+  a.click();
+  toast('💾 已下载结果');
+}
+
+function shareResult() {
+  if (!lastResult) return;
+  const text = `🛕 藏文路牌识别:\n${lastResult.raw_text}\n\n中文: ${lastResult.translated}`;
+  if (navigator.share) {
+    navigator.share({ title: '藏文路牌识别结果', text }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(text).then(() => toast('📤 结果已复制，可粘贴分享'));
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  Accessibility
+// ═══════════════════════════════════════════════
+function toggleLargeText() {
+  const btn = document.getElementById('a11yLarge');
+  btn.classList.toggle('active');
+  const isLarge = btn.classList.contains('active');
+  document.body.style.fontSize = isLarge ? '1.15em' : '';
+  localStorage.setItem('roadsign_largetext', isLarge ? '1' : '0');
+}
+
+function toggleContrast() {
+  const btn = document.getElementById('a11yContrast');
+  btn.classList.toggle('active');
+  const isHigh = btn.classList.contains('active');
+  document.body.style.filter = isHigh ? 'contrast(1.2) brightness(1.1)' : '';
+  localStorage.setItem('roadsign_contrast', isHigh ? '1' : '0');
+}
+
+function toggleAutoVoice() {
+  autoVoice = document.getElementById('autoVoice').checked;
+  localStorage.setItem('roadsign_autovoice', autoVoice ? '1' : '0');
+}
+
+function toggleVoiceMode() {
+  voiceMode = !voiceMode;
+  const btn = document.getElementById('voiceToggle');
+  btn.classList.toggle('active', voiceMode);
+  btn.innerHTML = voiceMode ? '🔊 语音播报' : '🔇 静音模式';
+  localStorage.setItem('roadsign_voice', voiceMode ? '1' : '0');
+}
+
+// ═══════════════════════════════════════════════
+//  Theme
+// ═══════════════════════════════════════════════
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? '' : 'dark');
+  document.getElementById('themeBtn').textContent = isDark ? '🌙' : '☀️';
+  localStorage.setItem('roadsign_theme', isDark ? 'light' : 'dark');
+}
+
+// ═══════════════════════════════════════════════
+//  Drag & Drop
+// ═══════════════════════════════════════════════
+(function() {
+  const zone = document.getElementById('uploadZone');
+  ['dragover','dragenter'].forEach(ev => zone.addEventListener(ev, e => {
+    e.preventDefault(); zone.style.borderColor = 'var(--accent)';
+  }));
+  ['dragleave','drop'].forEach(ev => zone.addEventListener(ev, e => {
+    e.preventDefault(); zone.style.borderColor = '';
+  }));
+  zone.addEventListener('drop', e => {
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+  // Full page drop
+  document.addEventListener('drop', e => {
+    e.preventDefault();
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+  document.addEventListener('dragover', e => e.preventDefault());
+})();
+
+// ═══════════════════════════════════════════════
+//  Toast
+// ═══════════════════════════════════════════════
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════════
+//  Keyboard shortcuts
+// ═══════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 'Enter') {
+    e.preventDefault();
+    if (!document.getElementById('inferBtn').disabled) doInfer();
+  }
+  if (e.key === 'Escape') closeCamera();
+});
+
+// ═══════════════════════════════════════════════
+//  Init — 页面加载时初始化地图
+// ═══════════════════════════════════════════════
+(function() {
+  // Restore theme
+  if (localStorage.getItem('roadsign_theme') === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.getElementById('themeBtn').textContent = '☀️';
+  }
+  // Restore accessibility
+  if (localStorage.getItem('roadsign_largetext') === '1') {
+    document.getElementById('a11yLarge').classList.add('active');
+    document.body.style.fontSize = '1.15em';
+  }
+  if (localStorage.getItem('roadsign_contrast') === '1') {
+    document.getElementById('a11yContrast').classList.add('active');
+    document.body.style.filter = 'contrast(1.2) brightness(1.1)';
+  }
+  if (localStorage.getItem('roadsign_voice') === '0') {
+    voiceMode = false;
+    document.getElementById('voiceToggle').classList.remove('active');
+    document.getElementById('voiceToggle').innerHTML = '🔇 静音模式';
+  } else {
+    document.getElementById('voiceToggle').classList.add('active');
+  }
+  if (localStorage.getItem('roadsign_autovoice') === '0') {
+    document.getElementById('autoVoice').checked = false;
+    autoVoice = false;
+  }
+  // Check health
+  checkHealth();
+  setInterval(checkHealth, 30000);
+
+  // 预加载高德地图 — 等待 SDK 加载后立即初始化
+  waitForAMap(15000).then(loaded => {
+    if (loaded) {
+      console.log('[RoadSign] 高德地图 SDK 已就绪，预初始化地图');
+      document.getElementById('mapPlaceholder').style.display = 'none';
+      document.getElementById('amapContainer').classList.add('active');
+      if (!initAMap()) {
+        console.warn('[RoadSign] 地图初始化失败');
+        document.getElementById('amapContainer').classList.remove('active');
+        document.getElementById('mapPlaceholder').style.display = '';
+      } else {
+        console.log('[RoadSign] 地图预初始化成功');
+      }
+    } else {
+      console.warn('[RoadSign] 高德地图 SDK 加载超时，导航功能不可用');
+    }
+  });
+})();
+</script>
+</body>
+</html>

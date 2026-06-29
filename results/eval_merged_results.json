@@ -1,0 +1,38 @@
+{
+  "summary": {
+    "samples": 200,
+    "avg_normalized_distance": 0.0260,
+    "avg_normalized_similarity": 0.9740,
+    "exact_match_rate": 0.725,
+    "exact_match_count": 145
+  },
+  "per_testset": {
+    "tibetan": {
+      "samples": 200,
+      "avg_normalized_similarity": 0.9743,
+      "exact_match_rate": 0.74,
+      "exact_match_count": 148
+    },
+    "multilingual": {
+      "samples": 200,
+      "avg_normalized_similarity": 0.9492,
+      "exact_match_rate": 0.65,
+      "exact_match_count": 130
+    }
+  },
+  "note": "合并训练 v2：QT-MSTR V3 + TibNST + 原有1799条，分层 LoRA rank=8/24/48 + MLP + LoRA+ + rsLoRA，可训~134M，双卡4090 ~5.2h",
+  "lora_scheme": {
+    "type": "hierarchical",
+    "shallow": { "layers": "0-10", "rank": 8, "alpha": 16, "targets": ["q_proj","k_proj","v_proj","o_proj"] },
+    "middle": { "layers": "11-21", "rank": 24, "alpha": 48, "targets": ["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"] },
+    "deep": { "layers": "22-31", "rank": 48, "alpha": 96, "targets": ["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"] },
+    "loraplus_lr_ratio": 2.0,
+    "use_rslora": true
+  },
+  "datasets_used": [
+    "natural_scene/train_joint_full.jsonl (1799条, 多语言)",
+    "QT-MSTR V3 (1000张, 店面招牌, 藏+中+英+数字)",
+    "TibNST/tibdata (3793张, 自然场景藏文 + 500合成)"
+  ],
+  "details": "详见服务器 /home/ubuntu2204/xf/output_merged_hierarchical/eval_results.json"
+}

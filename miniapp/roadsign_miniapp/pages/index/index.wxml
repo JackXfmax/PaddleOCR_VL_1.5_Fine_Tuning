@@ -1,0 +1,202 @@
+<!-- 智能藏文路牌识别与无障碍导航系统 - 微信小程序版 -->
+
+<!-- ===== 顶部状态栏 ===== -->
+<view class="status-bar">
+  <view class="status-left">
+    <view class="dot {{serverStatus}}"></view>
+    <text class="status-text">{{statusText}}</text>
+  </view>
+  <view class="status-right">
+    <button class="status-btn" bindtap="checkHealth" size="mini">检测连接</button>
+  </view>
+</view>
+
+<!-- ===== 地图导航区域 ===== -->
+<view class="map-section">
+  <map
+    id="navMap"
+    class="nav-map"
+    latitude="{{mapCenter.latitude}}"
+    longitude="{{mapCenter.longitude}}"
+    scale="{{mapScale}}"
+    markers="{{markers}}"
+    polyline="{{polylines}}"
+    show-location="{{true}}"
+    show-compass="{{true}}"
+    show-scale="{{true}}"
+    enable-zoom="{{true}}"
+    enable-scroll="{{true}}"
+    enable-rotate="{{true}}"
+    bindmarkertap="onMarkerTap"
+    bindregionchange="onRegionChange"
+  >
+  </map>
+
+  <!-- 地图上的路线摘要卡片 -->
+  <view class="route-summary" wx:if="{{routeDistance > 0}}">
+    <view class="route-info-row">
+      <view class="route-info-item">
+        <text class="route-label">距离</text>
+        <text class="route-value">{{routeDistanceText}}</text>
+      </view>
+      <view class="route-info-item">
+        <text class="route-label">预计</text>
+        <text class="route-value">{{routeDurationText}}</text>
+      </view>
+      <view class="route-info-item" wx:if="{{routeMode}}">
+        <text class="route-label">方式</text>
+        <text class="route-value">{{routeMode === 'walking' ? '步行' : '驾车'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 无路线时的提示 -->
+  <view class="route-empty" wx:if="{{routeDistance === 0 && hasResult}}">
+    <text>坐标搜索中或未找到目的地</text>
+  </view>
+</view>
+
+<!-- ===== 拍照 / 上传区域 ===== -->
+<view class="card">
+  <view class="card-header">
+    <text>📷 路牌图像</text>
+  </view>
+  <view class="card-body">
+    <!-- 图片预览 -->
+    <view class="image-preview" wx:if="{{imagePath}}">
+      <image class="preview-img" src="{{imagePath}}" mode="widthFix" />
+    </view>
+
+    <!-- 空状态：提示拍照 -->
+    <view class="upload-hint" wx:if="{{!imagePath}}">
+      <view class="upload-icon">🏔️</view>
+      <text class="upload-title">拍摄或选择路牌照片</text>
+      <text class="upload-desc">支持藏文/汉文/英文混合路牌识别</text>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="btn-row">
+      <button class="btn btn-primary action-btn" bindtap="takePhoto">
+        📸 拍照识别
+      </button>
+      <button class="btn btn-gold action-btn" bindtap="chooseImage">
+        🖼 相册选取
+      </button>
+      <button class="btn btn-outline action-btn" bindtap="resetAll" wx:if="{{imagePath}}">
+        ↩ 重新上传
+      </button>
+    </view>
+
+    <!-- 识别进度 -->
+    <view class="progress-wrap" wx:if="{{inferring}}">
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{progressPct}}%;"></view>
+      </view>
+      <text class="progress-text">{{progressText}}</text>
+    </view>
+  </view>
+</view>
+
+<!-- ===== 识别结果 ===== -->
+<view wx:if="{{hasResult}}">
+  <view class="card">
+    <view class="card-header">
+      <text>📝 识别结果</text>
+    </view>
+    <view class="card-body">
+
+      <!-- 路牌类型标签 -->
+      <view class="result-tags">
+        <text class="tag tag-{{signTypeClass}}">{{signType}}</text>
+        <text class="result-model">{{resultModel}}</text>
+      </view>
+
+      <!-- 原始藏文 -->
+      <view class="result-panel">
+        <view class="panel-title">📜 原始藏文识别</view>
+        <view class="panel-body raw-text">{{rawText}}</view>
+      </view>
+
+      <!-- 中文翻译 -->
+      <view class="result-panel">
+        <view class="panel-title">🔤 中文翻译</view>
+        <view class="panel-body">{{translated}}</view>
+      </view>
+
+      <!-- 导航建议 -->
+      <view class="nav-panel" wx:if="{{navSuggestions.length > 0}}">
+        <view class="nav-header">🧭 导航建议</view>
+        <view class="nav-body">
+          <view class="nav-item" wx:for="{{navSuggestions}}" wx:key="index">
+            <text class="ni-icon">{{navIcons[index]}}</text>
+            <text>{{item}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 路线步骤 -->
+      <view class="route-steps" wx:if="{{routeSteps.length > 0}}">
+        <view class="route-steps-header">🚗 路线步骤</view>
+        <view class="step-item" wx:for="{{routeSteps}}" wx:key="index">
+          <view class="step-num">{{item.index}}</view>
+          <view class="step-content">
+            <text class="step-instruction">{{item.instruction}}</text>
+            <text class="step-detail">{{item.road}} · {{item.distance}}米</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="result-actions">
+        <button class="action-btn-small" bindtap="copyResult">📋 复制</button>
+        <button class="action-btn-small" bindtap="readAloud">🔊 语音朗读</button>
+        <button class="action-btn-small" bindtap="openInAmap">🗺 高德导航</button>
+      </view>
+
+      <!-- 识别元信息 -->
+      <view class="result-meta">
+        <text>识别耗时: {{inferTime}}s · {{resultModel}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- ===== 无障碍辅助 ===== -->
+  <view class="a11y-card">
+    <view class="a11y-header">♿ 无障碍辅助功能</view>
+    <view class="a11y-body">
+      <view class="a11y-controls">
+        <button class="a11y-btn {{largeTextActive ? 'active' : ''}}" bindtap="toggleLargeText">
+          🔍 大字体模式
+        </button>
+        <button class="a11y-btn {{highContrastActive ? 'active' : ''}}" bindtap="toggleContrast">
+          👁 高对比度
+        </button>
+        <button class="a11y-btn {{autoVoiceActive ? 'active' : ''}}" bindtap="toggleAutoVoice">
+          🔊 {{autoVoiceActive ? '自动播报: 开' : '自动播报: 关'}}
+        </button>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- ===== 模型信息 ===== -->
+<view class="card model-info">
+  <view class="card-header">
+    <text>ℹ️ 模型信息</text>
+  </view>
+  <view class="card-body model-info-body">
+    <text>模型: PaddleOCR-VL-1.5 + TibetLoRA (B_manual)</text>
+    <text>测试: 多语言 avg_sim = 0.9318 | EM = 50.5%</text>
+    <text>设备: NVIDIA RTX 4090 GPU</text>
+    <text wx:if="{{inferTime}}">本次推理: {{inferTime}}s</text>
+  </view>
+</view>
+
+<!-- ===== 底部 ===== -->
+<view class="footer">
+  <text>Powered by PaddlePaddle · PaddleFormers</text>
+  <text>面向民族地区智能路牌识别与无障碍导航系统</text>
+</view>
+
+<!-- Toast -->
+<view class="toast {{toastShow ? 'show' : ''}}">{{toastMsg}}</view>

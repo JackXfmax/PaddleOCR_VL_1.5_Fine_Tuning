@@ -1,0 +1,5 @@
+paddlepaddle-gpu>=3.0.0
+paddleformers
+paddlenlp
+gradio>=4.0
+Pillow

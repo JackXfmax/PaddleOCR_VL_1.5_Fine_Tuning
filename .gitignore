@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+*.whl
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Model checkpoints (large files)
+*.safetensors
+*.bin
+*.pth
+*.ckpt
+checkpoint-*/
+output/
+
+# Training artifacts
+*.log
+logs/
+wandb/
+runs/
+tfevents/
+
+# Large data files
+*.zip
+*.7z
+*.tar.gz
+*.b64.txt
+reviewed_raw.jsonl
+
+# Node
+node_modules/
+package-lock.json
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment
+.env
+.env.local
+
+# System
+*.ps1
+*.bat
+desktop.ini

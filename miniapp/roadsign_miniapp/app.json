@@ -1,0 +1,21 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#8b0000",
+    "navigationBarTitleText": "藏文路牌智能识别",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#fdf6e3"
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "需要获取您的位置以规划导航路线"
+    }
+  },
+  "requiredPrivateInfos": [
+    "getLocation",
+    "chooseLocation"
+  ],
+  "sitemapLocation": "sitemap.json"
+}
