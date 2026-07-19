@@ -55,9 +55,10 @@
 ```mermaid
 graph TD
     subgraph 数据层["📊 Data Layer"]
-        D1["QT-MSTR V3<br/>1000张 店面招牌"]
-        D2["TibNST<br/>3793张 自然场景"]
-        D3["Synthetic<br/>500张 合成增强"]
+        D1["Set-A<br/>2000张 拉萨核心城区"]
+        D2["Set-B<br/>3000张 林芝、山南裁剪图"]
+        D3["Set-C<br/>1000张 甘青藏区双语现场"]
+        D4["Set-D<br/>200张 川西藏区混合场景"]
     end
 
     subgraph 训练层["🧠 Training Layer"]
