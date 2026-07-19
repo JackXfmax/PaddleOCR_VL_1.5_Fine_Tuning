@@ -384,9 +384,10 @@ services:
 ```mermaid
 graph LR
     subgraph Raw["📦 Raw Datasets"]
-        QT["QT-MSTR V3<br/>━━━━━━━<br/>1000 张<br/>12921 框<br/>TI/CH/EN/DI"]
-        TIB["TibNST<br/>━━━━━━━<br/>3793 张<br/>2046 条标注<br/>S1+S2 划分"]
-        SYNTH["Synthetic<br/>━━━━━━━<br/>500 张<br/>500 标注<br/>旋转增强"]
+        QT["Set-A<br/>━━━━━━━<br/>2000 张<br/>TI/CH/EN/DI等"]
+        TIB["Set-B<br/>━━━━━━━<br/>3000 张<br/>S1+S2 划分等"]
+        SYNTH["Set-C<br/>━━━━━━━<br/>1000 张<br/>旋转增强等"]
+        D["Set-D<br/>━━━━━━━<br/>2000 张<br/>透视旋转等"]
     end
 
     subgraph Process["⚙️ Processing"]
