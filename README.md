@@ -157,27 +157,26 @@ flowchart TB
 
 ### 1.2 分层 LoRA 架构详解
 
-模型采用 **32 层 Transformer** 按功能分为三个层级：
+模型按功能分为三个层级：
 
 ```
 Layer  0 ████ r=8  ───────────────────────┐
 Layer  1 ████ r=8                          │
-  ...   ...                                ├─ Shallow (0-10)
+  ...   ...                                ├─ Shallow (MLP*2)
 Layer 10 ████ r=8                          │  · attn only (q,k,v,o)
                                            │  · LoRA+ λ=1.5
 Layer 11 ████████████ r=24  ──────────────┐│  · ~8.8M params
   ...      ...                            ││
-Layer 21 ████████████ r=24                │├─ Middle (11-21)
+Layer 21 ████████████ r=24                │├─ Middle (LM layer0)
                                            ││  · attn + MLP (gate,up,down)
 Layer 22 ████████████████████ r=48  ─────┐││  · LoRA+ λ=2.0
   ...      ...                           ││├─ · ~44.0M params
 Layer 31 ████████████████████ r=48       │││
-                                          ││├─ Deep (22-31)
+                                          ││├─ Deep (LM layer0)
                                           │││  · attn + MLP (gate,up,down)
                                           │││  · LoRA+ λ=2.5
                                           │││  · ~81.0M params
                                           │││
-Total: ~134M 可训参数 (基座 7B 的 1.9%)    │││
                                           ┘││
                                            ┘│
                                             ┘
@@ -544,7 +543,7 @@ def convert_synthetic(label_dir: str, image_dir: str) -> List[Dict]:
 
 def merge_and_split(samples: List[Dict], test_size: float = 0.1,
                     random_state: int = 42) -> tuple:
-    """合并所有样本，按 90:10 划分训练/测试集"""
+    """合并所有样本，按 9:1 划分训练/测试集"""
     from sklearn.model_selection import train_test_split
     train, test = train_test_split(
         samples, test_size=test_size, random_state=random_state
@@ -613,17 +612,6 @@ train_transform = transforms.Compose([
 ])
 ```
 
-### 3.4 数据统计与质量报告
-
-| 数据集 | 图片数 | 标注条数 | 藏文占比 | 中文占比 | 其他 | 分辨率范围 |
-|--------|:----:|:------:|:------:|:------:|:--:|----------|
-| QT-MSTR V3 | 1,000 | 12,336 | 36.1% | 55.2% | 8.7% | 800×600 ~ 4032×3024 |
-| TibNST 主集 | 1,898 | 2,046 | 100% | — | — | 480×320 ~ 1920×1080 |
-| TibNST 合成 | 500 | 500 | 100% | — | — | 512×512 |
-| **合并总计** | **3,398** | **4,746** | — | — | — | — |
-
----
-
 ## 4. 模型训练全流程
 
 ### 4.1 训练流程图
@@ -638,8 +626,8 @@ sequenceDiagram
     User->>Data: 1. 运行 convert_datasets.py
     Data->>Data: 格式统一 → JSONL
     Data->>Data: 数据清洗 → 去噪/去重
-    Data->>Data: 划分 90:10
-    Data-->>User: train_merged.jsonl (~4200条)
+    Data->>Data: 划分 9:1
+    Data-->>User: train_merged.jsonl 
 
     User->>Trainer: 2. 配置 train_config.yaml
     Note over Trainer: lora_type: hierarchical<br/>rank: 8/24/48<br/>lr: 2.0e-4<br/>epochs: 5
@@ -680,9 +668,8 @@ _attn_implementation: flashmask
 lora: true
 lora_type: hierarchical
 
-# --- Shallow 层 (L0-10): 视觉底层特征 ---
+# --- Shallow 层 (MLP*2): 视觉底层特征 ---
 lora_shallow:
-  layers: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
   rank: 8
   alpha: 16
   dropout: 0.02
@@ -692,9 +679,8 @@ lora_shallow:
     - v_proj
     - o_proj
 
-# --- Middle 层 (L11-21): 字形与跨语言语义 ---
+# --- Middle 层 (LM Layer0): 字形与跨语言语义 ---
 lora_middle:
-  layers: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
   rank: 24
   alpha: 48
   dropout: 0.05
@@ -707,9 +693,8 @@ lora_middle:
     - up_proj
     - down_proj
 
-# --- Deep 层 (L22-31): OCR 任务解码 ---
+# --- Deep 层 (LM Layer1): OCR 任务解码 ---
 lora_deep:
-  layers: [22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
   rank: 48
   alpha: 96
   dropout: 0.08
@@ -730,9 +715,9 @@ use_rslora: true
 # ============================================================
 # III. 数据配置
 # ============================================================
-dataset: /home/ubuntu2204/xf/natural_scene/train_merged.jsonl
-image_root: /home/ubuntu2204/xf/natural_scene/
-template: /home/ubuntu2204/xf/paddleocr_vl_v15_template.py
+dataset: /natural_scene/train_merged.jsonl
+image_root: /natural_scene/
+template: /paddleocr_vl_v15_template.py
 max_seq_length: 2048
 
 # ============================================================
@@ -971,16 +956,6 @@ Content-Type: application/json
 | `image` | string | ✅ | Base64 编码的图像数据（不含 `data:image/...` 前缀） |
 | `lang_hint` | string | ❌ | 语言提示，可选 `tibetan`, `multilingual`，默认自动 |
 
-**请求示例：**
-
-```bash
-curl -X POST http://222.19.225.132:8899/ocr \
-  -H "Content-Type: application/json" \
-  -d '{
-    "image": "'"$(base64 -w0 road_sign.jpg)"'",
-    "lang_hint": "multilingual"
-  }'
-```
 
 **Python 客户端示例：**
 
@@ -988,7 +963,7 @@ curl -X POST http://222.19.225.132:8899/ocr \
 import base64
 import requests
 
-def ocr_image(image_path: str, server_url: str = "http://222.19.225.132:8899") -> dict:
+def ocr_image(image_path: str, server_url: str = "") -> dict:
     """调用藏文 OCR 推理服务"""
     with open(image_path, 'rb') as f:
         img_b64 = base64.b64encode(f.read()).decode('utf-8')
@@ -1095,7 +1070,7 @@ class TibetanOCRClient:
     """藏文 OCR 推理客户端
     
     Example:
-        >>> client = TibetanOCRClient("http://222.19.225.132:8899")
+        >>> client = TibetanOCRClient("")
         >>> result = client.ocr("road_sign.jpg")
         >>> print(result["text"])
     """
@@ -1200,7 +1175,6 @@ roadsign_miniapp/
 │       ├── index.wxml        # 页面模板
 │       └── index.wxss        # 页面样式
 └── utils/
-    ├── api.js                # OCR API 封装（请求 + 重试）
     ├── amap.js               # 高德地图 Web API
     └── dict.js               # 藏汉双语词典（60+ 词条）
 ```
@@ -1212,7 +1186,7 @@ roadsign_miniapp/
 App({
   globalData: {
     // OCR 推理服务器（开发环境可使用 HTTP）
-    ocrServer: 'http://222.19.225.132:8899',
+    
     
     // 高德地图 Web API Key
     amapKey: '2382d62a9e6919eec1f45a2055370a91',
@@ -1745,13 +1719,6 @@ sudo ufw allow 8899
 项目根目录: /home/ubuntu2204/xf/
 
 ├── PaddleOCR-VL-1.5/                      # 基座模型（只读）
-├── natural_scene/
-│   ├── QT-MSTR_V3/                        # QT-MSTR 数据集
-│   ├── TibNST/                            # TibNST 数据集
-│   ├── synthetic/                         # 合成数据
-│   ├── train_merged.jsonl                 # 合并训练集 (~4200条)
-│   ├── test_all.jsonl                     # 测试集 (~200条)
-│   └── test_multilingual.jsonl            # 多语言测试集
 │
 ├── output/                                # 基线 LoRA 权重
 ├── output_merged/                         # 合并-v1 LoRA 权重
